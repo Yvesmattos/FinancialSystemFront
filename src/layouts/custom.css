@@ -1,0 +1,3 @@
+.tableCenter > thead > tr > th, .tableCenter > tbody > tr > td {
+    text-align: center !important;
+}
