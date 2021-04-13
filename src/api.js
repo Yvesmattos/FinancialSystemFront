@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const API_URL = 'https://financialsystem.herokuapp.com';
+// const API_URL = 'http://localhost:8080';
 
 export function fetchDespesas() {
     return axios(`${API_URL}/despesas`)
