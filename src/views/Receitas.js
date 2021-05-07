@@ -25,6 +25,7 @@ import { updateReceita } from "api";
 import { insertReceita } from "api";
 import { treatCurrencyValues } from "helpers";
 import { brazilianDateFormat } from "helpers";
+import ReceitaFilter from "components/MovementFilter/ReceitaFilter";
 
 function Receitas() {
 
@@ -122,6 +123,7 @@ function Receitas() {
       <Container fluid>
         <Row>
           <Col md="12">
+            <ReceitaFilter receita={receitas}></ReceitaFilter>
             <Card className="strpied-tabled-with-hover">
               <Card.Header>
                 <Card.Title as="h4">Receitas

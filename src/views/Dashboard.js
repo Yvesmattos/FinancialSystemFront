@@ -149,7 +149,7 @@ function Dashboard() {
                   </Col>
                   <Col xs="7">
                     <div className="numbers">
-                      <p className="card-category">Despesas baixadas</p>
+                      <p className="card-category">Despesas pagas</p>
                       <Card.Title as="h5">{formatPrice(valorDespesasPagas)}</Card.Title>
                     </div>
                   </Col>

@@ -24,6 +24,7 @@ import { updateDespesa } from "api";
 import { treatCurrencyValues } from "helpers";
 import { insertDespesa } from "api";
 import { brazilianDateFormat } from "helpers";
+import DespesaFilter from "components/MovementFilter/DespesaFilter";
 
 function Despesas() {
 
@@ -123,6 +124,7 @@ function Despesas() {
       <Container fluid>
         <Row>
           <Col md="12">
+            <DespesaFilter despesa={despesas}></DespesaFilter>
             <Card className="strpied-tabled-with-hover">
               <Card.Header>
                 <Card.Title as="h4">Despesas

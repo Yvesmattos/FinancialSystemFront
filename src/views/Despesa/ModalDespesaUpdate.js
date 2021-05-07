@@ -133,7 +133,7 @@ function ModalDespesaUpdate({ despesa, openDialogUpdate, setOpenDialogUpdate, ha
                                     id="input-example"
                                     name="valorPago"
                                     style={{ borderLeft: 1, borderRight: 1, borderColor: '#28a745', borderStyle: 'solid' }}
-                                    value={despAux.valorPago != null || despAux.valorPago != undefined ? despAux.valorPago : 0.0}
+                                    value={despAux.valorPago != null || despAux.valorPago != undefined ? despAux.valorPago === 0 ? despAux.valorDespesa: despAux.valorPago : 0.0}
                                     decimalsLimit={2}
                                     decimalScale={2}
                                     prefix="R$ "
