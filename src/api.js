@@ -1,14 +1,22 @@
 import axios from "axios";
 
 // const API_URL = 'https://financialsystem.herokuapp.com';
-const API_URL = 'http://localhost:8080';
+const API_URL = process.env.REACT_APP_BACKEND_URL ?? 'http://localhost:8080';
 
 export function fetchDespesas() {
-    return axios(`${API_URL}/despesas`)
+    return axios.get(`${API_URL}/despesas`)
+}
+
+export function fetchDespesasOnPage(activePage) {
+    return axios.get(`${API_URL}/despesas/pages?page=${activePage}`)
 }
 
 export function fetchReceitas() {
-    return axios(`${API_URL}/receitas`)
+    return axios.get(`${API_URL}/receitas`)
+}
+
+export function fetchReceitasOnPage(activePage) {
+    return axios.get(`${API_URL}/receitas/pages?page=${activePage}`)
 }
 
 export function deleteReceita(id){

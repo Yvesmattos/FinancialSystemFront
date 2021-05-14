@@ -2,13 +2,8 @@ import { fetchReceitas } from "api";
 import { formatPrice } from "helpers";
 import React, { useEffect, useState } from "react";
 import '../layouts/custom.css';
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
-
-
+import ModalReceitaUpdate from "./Receita/ModalReceitaUpdate";
+import ModalReceitaInsert from "./Receita/ModalReceitaInsert";
 // react-bootstrap components
 import {
   Button,
@@ -19,13 +14,13 @@ import {
   Col,
 } from "react-bootstrap";
 import { deleteReceita } from "api";
-import ModalReceitaUpdate from "./Receita/ModalReceitaUpdate";
-import ModalReceitaInsert from "./Receita/ModalReceitaInsert";
 import { updateReceita } from "api";
 import { insertReceita } from "api";
 import { treatCurrencyValues } from "helpers";
 import { brazilianDateFormat } from "helpers";
 import ReceitaFilter from "components/MovementFilter/ReceitaFilter";
+import DataTable from "components/DataTable/DataTable";
+import { fetchReceitasOnPage } from "api";
 
 function Receitas() {
 
@@ -38,30 +33,89 @@ function Receitas() {
   const [valorTotal, setValorTotal] = useState(0);
   const [valorPendente, setValorPendente] = useState(0);
   const [valorRecebido, setValorRecebido] = useState(0);
+  const [activePage, setActivePage] = useState(0);
+  const [page, setPage] = useState({
+    first: true,
+    last: true,
+    number: 0,
+    totalElements: 0,
+    totalPages: 0,
+  });
 
+  const dicionario = {
+    receita: "Receita",
+    origem: "Origem",
+    mesReferencia: "Mês de referência",
+    valorReceita: "Valor da Receita",
+    valorPago: "Valor Recebido",
+    situacao: "Situação"
+  }
+
+  const [recFiltro, setRecFiltro] = useState({
+    nomeReceita: "",
+    origem: "",
+    meioPagamento: "",
+    formaPagamento: "",
+    situacao: "",
+    mesReferencia: ""
+  })
 
   const handleOpenDialog = (receita) => {
+    let recAux = JSON.parse(JSON.stringify(receita));
     setOpenDialogUpdate(true);
-    setReceitaUpdate(receita);
+    setReceitaUpdate(recAux);
+  };
+
+
+  const handleClickOpen = (receita) => {
+    setReceitaExcluir(receita)
+    setOpen(true);
+  };
+
+  const handleClose = (props) => {
+    deleteReceita(props.id)
+      .then(() => fetchReceitas()
+        .then(response => {
+          setReceitas(response.data);
+          fetchReceitasOnPage(page.numberOfElements === 1 ? page.number - 1 : page.number).then(
+            (response) => setPage(response.data)
+          )
+        })
+        .catch(e => console.log(e))
+      )
+      .catch(e => console.log(e));
+    setOpen(false);
   };
 
   const handleDialogInsert = () => {
     setOpenDialogInsert(true);
   }
 
-  const handleClickOpen = (receita) => {
-    setReceitaExcluir(receita)
-    setOpen(true);
-  };
-  const handleClose = (props) => {
-    deleteReceita(props.id)
-      .then(() => fetchReceitas()
-        .then(response => setReceitas(response.data))
-        .catch(e => console.log(e))
-      )
-      .catch(e => console.log(e));
-    setOpen(false);
-  };
+  const handleUpdate = async (receita) => {
+    let recAux = JSON.parse(JSON.stringify(receita));
+    treatCurrencyValues(recAux, "r");
+    brazilianDateFormat(recAux, "r");
+    await updateReceita(recAux.id, recAux)
+    fetchReceitasOnPage(page.number).then(
+      (response) => setPage(response.data)
+    );
+    const request = await fetchReceitas();
+    setReceitas(request.data)
+    setOpenDialogUpdate(false);
+  }
+
+  const handleInsert = async (receita) => {
+    let recAux = JSON.parse(JSON.stringify(receita));
+    treatCurrencyValues(recAux, "r");
+    brazilianDateFormat(recAux, "r");
+    await insertReceita(recAux);
+    const request = await fetchReceitas();
+    setReceitas(request.data);
+    setOpenDialogInsert(false)
+    fetchReceitasOnPage(page.number).then(
+      (response) => setPage(response.data)
+    );
+  }
 
   const atualizarTotal = () => {
     let total = receitas.reduce((acc, val) => acc += val.valorReceita, 0);
@@ -78,52 +132,65 @@ function Receitas() {
     setValorRecebido(total);
   }
 
-  const handleUpdate = async (receita) => {
-    let recAux = JSON.parse(JSON.stringify(receita));
 
-    treatCurrencyValues(recAux, "r");
-    brazilianDateFormat(recAux, "r");
-
-
-    await updateReceita(recAux.id, recAux)
-    const request = await fetchReceitas();
-    setReceitas(request.data)
-    setOpenDialogUpdate(false);
+  const applyFilter = (aux) => {
+    aux = aux.filter(x =>
+      (x.nomeReceita === recFiltro.nomeReceita || recFiltro.nomeReceita === "") &&
+      (x.origem === recFiltro.origem || recFiltro.origem === "") &&
+      (x.meioPagamento === recFiltro.meioPagamento || recFiltro.meioPagamento === "") &&
+      (x.formaPagamento === recFiltro.formaPagamento || recFiltro.formaPagamento === "") &&
+      (x.situacao === recFiltro.situacao || recFiltro.situacao === "") &&
+      (x.mesReferencia === recFiltro.mesReferencia || recFiltro.mesReferencia === ""))
+      return aux;
   }
 
-  const handleInsert = async (receita) => {
-    let recAux = JSON.parse(JSON.stringify(receita));
+  const handleFilter = () => {
+    fetchReceitasOnPage(activePage)
+      .then(response => {
+        let aux = response.data.content;
 
-    treatCurrencyValues(recAux, "r");
-    brazilianDateFormat(recAux, "r");
+        aux = applyFilter(aux);
 
-
-    await insertReceita(recAux)
-    const request = await fetchReceitas();
-    setReceitas(request.data);
-    setOpenDialogInsert(false)
+        response.data.content = aux;
+        setPage(response.data)
+      }).catch(error => console.log(error))
   }
 
   useEffect(() => {
     fetchReceitas()
-      .then(response => setReceitas(response.data))
+      .then(response => {
+        setReceitas(response.data)
+      })
+      .catch(error => console.log(error));
   }, [])
 
   useEffect(() => {
-    atualizarTotal();
-    atualizarRecebido();
+    fetchReceitasOnPage(activePage)
+      .then(response => {
+        let aux = response.data.content;
+
+        aux = applyFilter(aux);
+
+        response.data.content = aux;  
+        setPage(response.data)
+      }).catch(error => console.log(error))
+  }, [activePage])
+
+  useEffect(() => {
     atualizarPendente();
+    atualizarRecebido();
+    atualizarTotal();
   }, [receitas]);
 
-  return (
 
+  return (
     <>
       {openDialogUpdate ? <ModalReceitaUpdate receita={receitaUpdate} openDialogUpdate={openDialogUpdate} setOpenDialogUpdate={setOpenDialogUpdate} handleUpdate={handleUpdate}></ModalReceitaUpdate> : null}
       {openDialogInsert ? <ModalReceitaInsert openDialogInsert={openDialogInsert} setOpenDialogInsert={setOpenDialogInsert} handleInsert={handleInsert}></ModalReceitaInsert> : null}
       <Container fluid>
         <Row>
           <Col md="12">
-            <ReceitaFilter receita={receitas}></ReceitaFilter>
+            <ReceitaFilter receita={receitas} handleFilter={handleFilter} recFiltro={recFiltro} setRecFiltro={setRecFiltro}></ReceitaFilter>
             <Card className="strpied-tabled-with-hover">
               <Card.Header>
                 <Card.Title as="h4">Receitas
@@ -135,68 +202,16 @@ function Receitas() {
                       onClick={handleDialogInsert}
                     >
                       Nova Receita
-
                   </Button>
                   </div>
                 </Card.Title>
-
               </Card.Header>
               <Card.Body className="table-full-width table-responsive px-0">
-                <Table className="table-hover table-striped tableCenter">
-                  <thead>
-                    <tr>
-                      <th className="border-0">ID</th>
-                      <th className="border-0">Receita</th>
-                      <th className="border-0">Origem</th>
-                      <th className="border-0">Mês referência</th>
-                      <th className="border-0">Data de crédito</th>
-                      <th className="border-0">Valor da receita</th>
-                      <th className="border-0">Valor recebido</th>
-                      <th className="border-0">Situação</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {receitas.map(receita => (
-                      <tr key={receita.id}>
-                        <td>{receita.id}</td>
-                        <td>{receita.nomeReceita}</td>
-                        <td>{receita.origem}</td>
-                        <td>{receita.mesReferencia ? receita.mesReferencia : "-"}</td>
-                        <td>{receita.dataCredito ? receita.dataCredito : "-"}</td>
-                        <td>{formatPrice(receita.valorReceita)}</td>
-                        <td>{formatPrice(receita.valorPago)}</td>
-                        <td>{receita.situacao}</td>
-                        <td><Button className="btn-fill pull-right" variant="success" onClick={() => handleOpenDialog(receita)} >Alterar</Button>
-                        </td>
-                        <td><Button className="btn-fill pull-right" variant="danger" onClick={() => handleClickOpen(receita)}>Excluir</Button>
-
-                          <Dialog
-                            key={receitaExcluir !== undefined ? receitaExcluir.id : null}
-                            open={open}
-                            onClose={handleClose}
-                            aria-labelledby="alert-dialog-title"
-                            aria-describedby="alert-dialog-description"
-                          >
-                            <DialogTitle id="alert-dialog-title">{"Confirmação de exclusão"}</DialogTitle>
-                            <DialogContent>
-                              <DialogContentText id="alert-dialog-description">
-                                Você confirma a exclusão da receita?
-                              </DialogContentText>
-                            </DialogContent>
-                            <DialogActions>
-                              <Button onClick={() => setOpen(false)} color="primary">
-                                Não
-                              </Button>
-                              <Button onClick={() => handleClose(receitaExcluir)} color="primary" autoFocus>
-                                Sim
-                              </Button>
-                            </DialogActions>
-                          </Dialog>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
+                <DataTable
+                  dicionario={dicionario} handleOpenDialog={handleOpenDialog}
+                  handleClickOpen={handleClickOpen} movimentoExcluir={receitaExcluir} open={open}
+                  handleClose={handleClose} setOpen={setOpen} setActivePage={setActivePage} setPage={setPage} page={page}>
+                </DataTable>
                 <Table>
                   <tbody>
                     <tr style={{ width: "100%" }}>

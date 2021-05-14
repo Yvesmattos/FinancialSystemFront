@@ -2,14 +2,8 @@ import { fetchDespesas } from "api";
 import { formatPrice } from "helpers";
 import React, { useEffect, useState } from "react";
 import '../layouts/custom.css';
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
 import ModalDespesaUpdate from './Despesa/ModalDespesaUpdate';
 import ModalDespesaInsert from './Despesa/ModalDespesaInsert';
-
 // react-bootstrap components
 import {
   Button,
@@ -21,73 +15,104 @@ import {
 } from "react-bootstrap";
 import { deleteDespesa } from "api";
 import { updateDespesa } from "api";
-import { treatCurrencyValues } from "helpers";
 import { insertDespesa } from "api";
+import { treatCurrencyValues } from "helpers";
 import { brazilianDateFormat } from "helpers";
 import DespesaFilter from "components/MovementFilter/DespesaFilter";
+import DataTable from "components/DataTable/DataTable";
+import { fetchDespesasOnPage } from "api";
 
 function Despesas() {
 
   const [despesas, setDespesas] = useState([]);
-  const [despesaExcluir, setDespesaExcluir] = useState();
   const [despesaUpdate, setDespesaUpdate] = useState();
+  const [despesaExcluir, setDespesaExcluir] = useState();
+  const [open, setOpen] = useState(false);
   const [openDialogUpdate, setOpenDialogUpdate] = useState(false);
   const [openDialogInsert, setOpenDialogInsert] = useState(false);
   const [valorTotal, setValorTotal] = useState(0);
   const [valorPendente, setValorPendente] = useState(0);
   const [valorPago, setValorPago] = useState(0);
-
-  const [open, setOpen] = useState(false);
+  const [activePage, setActivePage] = useState(0);
+  const [page, setPage] = useState({
+    first: true,
+    last: true,
+    number: 0,
+    totalElements: 0,
+    totalPages: 0,
+  });
+  const dicionario = {
+    despesa: "Despesa",
+    favorecido: "Favorecido",
+    dataVencimento: "Data de Vencimento",
+    valorDespesa: "Valor da despesa",
+    valorPago: "Valor Pago",
+    situacao: "Situação"
+  }
+  const [despFiltro, setDespFiltro] = useState({
+    nomeDespesa: "",
+    favorecido: "",
+    formaPagamento: "",
+    meioPagamento: "",
+    situacao: "",
+    mesReferencia: ""
+  })
 
   const handleOpenDialog = (despesa) => {
     let despAux = JSON.parse(JSON.stringify(despesa));
-
     setOpenDialogUpdate(true);
     setDespesaUpdate(despAux);
   };
-
-  const handleDialogInsert = () => {
-    setOpenDialogInsert(true);
-  }
 
   const handleClickOpen = (despesa) => {
     setDespesaExcluir(despesa)
     setOpen(true);
   };
 
-  const handleUpdate = async (despesa) => {
-    let despAux = JSON.parse(JSON.stringify(despesa));
-
-    treatCurrencyValues(despAux, "d");
-    brazilianDateFormat(despAux, "d");
-
-    await updateDespesa(despAux.id, despAux)
-    const request = await fetchDespesas();
-    setDespesas(request.data)
-    setOpenDialogUpdate(false);
-  }
-
-
   const handleClose = (props) => {
     deleteDespesa(props.id)
       .then(() => fetchDespesas()
-        .then(response => setDespesas(response.data))
+        .then(response => {
+          setDespesas(response.data);
+          fetchDespesasOnPage(page.numberOfElements === 1 ? page.number - 1 : page.number).then(
+            (response) => setPage(response.data)
+          )
+        })
         .catch(e => console.log(e))
       )
       .catch(e => console.log(e));
+
     setOpen(false);
   };
 
-  const handleInsert = async (despesa) => {
-    let despAux = JSON.parse(JSON.stringify(despesa));
+  const handleDialogInsert = () => {
+    setOpenDialogInsert(true);
+  }
 
+  const handleUpdate = async (despesa, number) => {
+    let despAux = JSON.parse(JSON.stringify(despesa));
     treatCurrencyValues(despAux, "d");
     brazilianDateFormat(despAux, "d");
+    await updateDespesa(despAux.id, despAux)
+    fetchDespesasOnPage(page.number).then(
+      (response) => setPage(response.data)
+    );
+    const request = await fetchDespesas();
+    setDespesas(request.data);
+    setOpenDialogUpdate(false);
+  }
 
+  const handleInsert = async (despesa) => {
+    let despAux = JSON.parse(JSON.stringify(despesa));
+    treatCurrencyValues(despAux, "d");
+    brazilianDateFormat(despAux, "d");
     await insertDespesa(despAux);
     const request = await fetchDespesas();
     setDespesas(request.data);
-    setOpenDialogInsert(false)
+    setOpenDialogInsert(false);
+    fetchDespesasOnPage(page.number).then(
+      (response) => setPage(response.data)
+    );
   }
 
   const atualizarTotal = () => {
@@ -105,11 +130,42 @@ function Despesas() {
     setValorPago(total);
   }
 
+  const applyFilter = (aux) => {
+    aux = aux.filter(x =>
+      (x.nomeDespesa === despFiltro.nomeDespesa || despFiltro.nomeDespesa === "") &&
+      (x.favorecido === despFiltro.favorecido || despFiltro.favorecido === "") &&
+      (x.meioPagamento === despFiltro.meioPagamento || despFiltro.meioPagamento === "") &&
+      (x.formaPagamento === despFiltro.formaPagamento || despFiltro.formaPagamento === "") &&
+      (x.situacao === despFiltro.situacao || despFiltro.situacao === "") &&
+      (x.mesReferencia === despFiltro.mesReferencia || despFiltro.mesReferencia === ""))
+    return aux;
+  }
+
+  const handleFilter = () => {
+    fetchDespesasOnPage(activePage)
+      .then(response => {
+        let aux = response.data.content;
+        aux = applyFilter(aux);
+        response.data.content = aux;
+        setPage(response.data)
+      }).catch(error => console.log(error))
+  }
+
   useEffect(() => {
     fetchDespesas()
       .then(response => setDespesas(response.data))
       .catch(error => console.log(error));
   }, [])
+
+  useEffect(() => {
+    fetchDespesasOnPage(activePage)
+      .then(response => {
+        let aux = response.data.content;
+        aux = applyFilter(aux);
+        response.data.content = aux;
+        setPage(response.data)
+      }).catch(error => console.log(error))
+  }, [activePage])
 
   useEffect(() => {
     atualizarPendente();
@@ -124,7 +180,7 @@ function Despesas() {
       <Container fluid>
         <Row>
           <Col md="12">
-            <DespesaFilter despesa={despesas}></DespesaFilter>
+            <DespesaFilter despesa={despesas} handleFilter={handleFilter} despFiltro={despFiltro} setDespFiltro={setDespFiltro}></DespesaFilter>
             <Card className="strpied-tabled-with-hover">
               <Card.Header>
                 <Card.Title as="h4">Despesas
@@ -139,60 +195,13 @@ function Despesas() {
                   </Button>
                   </div>
                 </Card.Title>
-
               </Card.Header>
               <Card.Body className="table-full-width table-responsive px-0">
-                <Table className="table-hover table-striped tableCenter">
-                  <thead>
-                    <tr>
-                      <th className="border-0">ID</th>
-                      <th className="border-0">Despesa</th>
-                      <th className="border-0">Favorecido</th>
-                      <th className="border-0">Data de Vencimento</th>
-                      <th className="border-0">Valor da despesa</th>
-                      <th className="border-0">Valor pago</th>
-                      <th className="border-0">Situação</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {despesas.map(despesa => (
-                      <tr key={despesa.id}>
-                        <td>{despesa.id}</td>
-                        <td>{despesa.nomeDespesa}</td>
-                        <td>{despesa.favorecido}</td>
-                        <td>{despesa.dataVencimento}</td>
-                        <td>{formatPrice(despesa.valorDespesa)}</td>
-                        <td>{formatPrice(despesa.valorPago)}</td>
-                        <td>{despesa.situacao}</td>
-                        <td><Button className="btn-fill pull-right" variant="success" onClick={() => handleOpenDialog(despesa)}>Alterar</Button></td>
-                        <td><Button className="btn-fill pull-right" variant="danger" onClick={() => handleClickOpen(despesa)}>Excluir</Button>
-                          <Dialog
-                            key={despesaExcluir !== undefined ? despesaExcluir.id : null}
-                            open={open}
-                            onClose={handleClose}
-                            aria-labelledby="alert-dialog-title"
-                            aria-describedby="alert-dialog-description"
-                          >
-                            <DialogTitle id="alert-dialog-title">{"Confirmação de exclusão"}</DialogTitle>
-                            <DialogContent>
-                              <DialogContentText id="alert-dialog-description">
-                                Você confirma a exclusão da despesa?
-                              </DialogContentText>
-                            </DialogContent>
-                            <DialogActions>
-                              <Button onClick={() => setOpen(false)} color="primary">
-                                Não
-                              </Button>
-                              <Button onClick={() => handleClose(despesaExcluir)} color="primary" autoFocus>
-                                Sim
-                              </Button>
-                            </DialogActions>
-                          </Dialog>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
+                <DataTable
+                  dicionario={dicionario} handleOpenDialog={handleOpenDialog}
+                  handleClickOpen={handleClickOpen} movimentoExcluir={despesaExcluir} open={open}
+                  handleClose={handleClose} setOpen={setOpen} setActivePage={setActivePage} setPage={setPage} page={page}>
+                </DataTable>
                 <Table>
                   <tbody>
                     <tr style={{ width: "100%" }}>
