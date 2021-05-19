@@ -26,7 +26,6 @@ const useStyles = makeStyles((theme) => ({
 
 function ModalReceitaUpdate({ receita, openDialogUpdate, setOpenDialogUpdate, handleUpdate }) {
 
-
     const [recAux, setRecAux] = useState(JSON.parse(JSON.stringify(receita)));
 
     function changeField(event) {
