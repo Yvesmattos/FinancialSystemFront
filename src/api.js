@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// const API_URL = 'https://financialsystem.herokuapp.com';
-const API_URL = process.env.REACT_APP_BACKEND_URL ?? 'http://localhost:8080';
+const API_URL = 'https://financialsystem.herokuapp.com';
+// const API_URL = process.env.REACT_APP_BACKEND_URL ?? 'http://localhost:8080';
 
 export function fetchDespesas() {
     return axios.get(`${API_URL}/despesas`)
