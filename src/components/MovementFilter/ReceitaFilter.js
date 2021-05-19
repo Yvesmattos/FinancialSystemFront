@@ -22,17 +22,17 @@ function ReceitaFilter({ receita, handleFilter, recFiltro, setRecFiltro }) {
     }
 
     const handleChange = x => {
-        recFiltro[x.target.name] = x.target.value;
+        recFiltro[x.target.name] = x.target.value === "" ? null : x.target.value;
         setRecFiltro(recFiltro);
     }
 
     const cleanData = () => {
-        recFiltro.nomeReceita = ""
-        recFiltro.origem = ""
-        recFiltro.meioPagamento = ""
-        recFiltro.formaPagamento = ""
-        recFiltro.situacao = ""
-        recFiltro.mesReferencia = ""
+        recFiltro.nomeReceita = null
+        recFiltro.origem = null
+        recFiltro.meioPagamento = null
+        recFiltro.formaPagamento = null
+        recFiltro.situacao = "PENDENTE"
+        recFiltro.mesReferencia = null
         setRecFiltro[recFiltro]
     }
 

@@ -50,12 +50,12 @@ function Despesas() {
     situacao: "Situação"
   }
   const [despFiltro, setDespFiltro] = useState({
-    nomeDespesa: "",
-    favorecido: "",
-    formaPagamento: "",
-    meioPagamento: "",
-    situacao: "",
-    mesReferencia: ""
+    nomeDespesa: null,
+    favorecido: null,
+    formaPagamento: null,
+    meioPagamento: null,
+    situacao: "PENDENTE",
+    mesReferencia: null
   })
 
   const handleOpenDialog = (despesa) => {
@@ -74,14 +74,13 @@ function Despesas() {
       .then(() => fetchDespesas()
         .then(response => {
           setDespesas(response.data);
-          fetchDespesasOnPage(page.numberOfElements === 1 ? page.number - 1 : page.number).then(
+          fetchDespesasOnPage(page.numberOfElements === 1 ? page.number - 1 : page.number, despFiltro).then(
             (response) => setPage(response.data)
           )
         })
         .catch(e => console.log(e))
       )
       .catch(e => console.log(e));
-
     setOpen(false);
   };
 
@@ -89,12 +88,12 @@ function Despesas() {
     setOpenDialogInsert(true);
   }
 
-  const handleUpdate = async (despesa, number) => {
+  const handleUpdate = async (despesa) => {
     let despAux = JSON.parse(JSON.stringify(despesa));
     treatCurrencyValues(despAux, "d");
     brazilianDateFormat(despAux, "d");
-    await updateDespesa(despAux.id, despAux)
-    fetchDespesasOnPage(page.number).then(
+    await updateDespesa(despAux.id, despAux).then(response=>console.log(response));
+    fetchDespesasOnPage(page.number, despFiltro).then(
       (response) => setPage(response.data)
     );
     const request = await fetchDespesas();
@@ -110,7 +109,7 @@ function Despesas() {
     const request = await fetchDespesas();
     setDespesas(request.data);
     setOpenDialogInsert(false);
-    fetchDespesasOnPage(page.number).then(
+    fetchDespesasOnPage(page.number, despFiltro).then(
       (response) => setPage(response.data)
     );
   }
@@ -130,23 +129,10 @@ function Despesas() {
     setValorPago(total);
   }
 
-  const applyFilter = (aux) => {
-    aux = aux.filter(x =>
-      (x.nomeDespesa === despFiltro.nomeDespesa || despFiltro.nomeDespesa === "") &&
-      (x.favorecido === despFiltro.favorecido || despFiltro.favorecido === "") &&
-      (x.meioPagamento === despFiltro.meioPagamento || despFiltro.meioPagamento === "") &&
-      (x.formaPagamento === despFiltro.formaPagamento || despFiltro.formaPagamento === "") &&
-      (x.situacao === despFiltro.situacao || despFiltro.situacao === "") &&
-      (x.mesReferencia === despFiltro.mesReferencia || despFiltro.mesReferencia === ""))
-    return aux;
-  }
-
   const handleFilter = () => {
-    fetchDespesasOnPage(activePage)
+    fetchDespesasOnPage(activePage, despFiltro)
       .then(response => {
-        let aux = response.data.content;
-        aux = applyFilter(aux);
-        response.data.content = aux;
+        setActivePage(0)
         setPage(response.data)
       }).catch(error => console.log(error))
   }
@@ -158,11 +144,8 @@ function Despesas() {
   }, [])
 
   useEffect(() => {
-    fetchDespesasOnPage(activePage)
+    fetchDespesasOnPage(activePage, despFiltro)
       .then(response => {
-        let aux = response.data.content;
-        aux = applyFilter(aux);
-        response.data.content = aux;
         setPage(response.data)
       }).catch(error => console.log(error))
   }, [activePage])

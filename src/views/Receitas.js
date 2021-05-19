@@ -52,12 +52,12 @@ function Receitas() {
   }
 
   const [recFiltro, setRecFiltro] = useState({
-    nomeReceita: "",
-    origem: "",
-    meioPagamento: "",
-    formaPagamento: "",
-    situacao: "",
-    mesReferencia: ""
+    nomeReceita: null,
+    origem: null,
+    meioPagamento: null,
+    formaPagamento: null,
+    situacao: "PENDENTE",
+    mesReferencia: null,
   })
 
   const handleOpenDialog = (receita) => {
@@ -77,7 +77,7 @@ function Receitas() {
       .then(() => fetchReceitas()
         .then(response => {
           setReceitas(response.data);
-          fetchReceitasOnPage(page.numberOfElements === 1 ? page.number - 1 : page.number).then(
+          fetchReceitasOnPage(page.numberOfElements === 1 ? page.number - 1 : page.number, recFiltro).then(
             (response) => setPage(response.data)
           )
         })
@@ -95,9 +95,13 @@ function Receitas() {
     let recAux = JSON.parse(JSON.stringify(receita));
     treatCurrencyValues(recAux, "r");
     brazilianDateFormat(recAux, "r");
-    await updateReceita(recAux.id, recAux)
-    fetchReceitasOnPage(page.number).then(
-      (response) => setPage(response.data)
+    await updateReceita(recAux.id, recAux).then(response=>console.log(response));
+    console.log()
+    fetchReceitasOnPage(page.number, recFiltro).then(
+      (response) => {setPage(response.data)
+      
+      }
+      
     );
     const request = await fetchReceitas();
     setReceitas(request.data)
@@ -112,7 +116,7 @@ function Receitas() {
     const request = await fetchReceitas();
     setReceitas(request.data);
     setOpenDialogInsert(false)
-    fetchReceitasOnPage(page.number).then(
+    fetchReceitasOnPage(page.number, recFiltro).then(
       (response) => setPage(response.data)
     );
   }
@@ -132,46 +136,23 @@ function Receitas() {
     setValorRecebido(total);
   }
 
-
-  const applyFilter = (aux) => {
-    aux = aux.filter(x =>
-      (x.nomeReceita === recFiltro.nomeReceita || recFiltro.nomeReceita === "") &&
-      (x.origem === recFiltro.origem || recFiltro.origem === "") &&
-      (x.meioPagamento === recFiltro.meioPagamento || recFiltro.meioPagamento === "") &&
-      (x.formaPagamento === recFiltro.formaPagamento || recFiltro.formaPagamento === "") &&
-      (x.situacao === recFiltro.situacao || recFiltro.situacao === "") &&
-      (x.mesReferencia === recFiltro.mesReferencia || recFiltro.mesReferencia === ""))
-      return aux;
-  }
-
   const handleFilter = () => {
-    fetchReceitasOnPage(activePage)
+    fetchReceitasOnPage(activePage, recFiltro)
       .then(response => {
-        let aux = response.data.content;
-
-        aux = applyFilter(aux);
-
-        response.data.content = aux;
+        setActivePage(0)
         setPage(response.data)
       }).catch(error => console.log(error))
   }
 
   useEffect(() => {
     fetchReceitas()
-      .then(response => {
-        setReceitas(response.data)
-      })
+      .then(response => setReceitas(response.data))
       .catch(error => console.log(error));
   }, [])
 
   useEffect(() => {
-    fetchReceitasOnPage(activePage)
+    fetchReceitasOnPage(activePage, recFiltro)
       .then(response => {
-        let aux = response.data.content;
-
-        aux = applyFilter(aux);
-
-        response.data.content = aux;  
         setPage(response.data)
       }).catch(error => console.log(error))
   }, [activePage])

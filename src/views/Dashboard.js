@@ -35,8 +35,6 @@ function Dashboard() {
   ), [receitas.length]);
 
   useEffect(() => {
-    console.log(despesas)
-    console.log(despesas)
     atualizarValoresCards();
   }, [despesas, receitas]);
 

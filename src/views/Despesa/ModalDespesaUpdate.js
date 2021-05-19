@@ -24,9 +24,6 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-
-
-
 function ModalDespesaUpdate({ despesa, openDialogUpdate, setOpenDialogUpdate, handleUpdate }) {
 
 

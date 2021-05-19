@@ -22,17 +22,18 @@ function DespesaFilter({ despesa, handleFilter, despFiltro, setDespFiltro }) {
     }
 
     const handleChange = x => {
-        despFiltro[x.target.name] = x.target.value;
+
+        despFiltro[x.target.name] = x.target.value === "" ? null : x.target.value;
         setDespFiltro(despFiltro);
     }
 
     const cleanData = () => {
-        despFiltro.nomeDespesa = ""
-        despFiltro.favorecido = ""
-        despFiltro.meioPagamento = ""
-        despFiltro.formaPagamento = ""
-        despFiltro.situacao = ""
-        despFiltro.mesReferencia = ""
+        despFiltro.nomeDespesa = null
+        despFiltro.favorecido = null
+        despFiltro.meioPagamento = null
+        despFiltro.formaPagamento = null
+        despFiltro.situacao = "PENDENTE"
+        despFiltro.mesReferencia = null
         setDespFiltro[despFiltro]
     }
 
@@ -93,10 +94,10 @@ function DespesaFilter({ despesa, handleFilter, despFiltro, setDespFiltro }) {
                     </Form.Group>
                 </Form.Row>
                 <div style={{ textAlign: 'center', marginBottom: '15px' }}>
-                    <Button variant="success" className="btn-fill pull-right" style={{ marginLeft: 30 }} onClick={() => {handleFilter(); console.log(despFiltro)}}>
+                    <Button variant="success" className="btn-fill pull-right" style={{ marginLeft: 30 }} onClick={() => { handleFilter() }}>
                         Aplicar filtro
                     </Button>
-                    <Button variant="danger" type="reset" className="btn-fill pull-right" style={{ marginLeft: 30 }} onClick={() => { cleanData(); handleFilter(); console.log(despFiltro) }}>
+                    <Button variant="danger" type="reset" className="btn-fill pull-right" style={{ marginLeft: 30 }} onClick={() => { cleanData(); handleFilter();}}>
                         Limpar filtro
                     </Button>
                 </div>
